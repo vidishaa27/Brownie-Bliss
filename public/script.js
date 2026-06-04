@@ -28,10 +28,12 @@ let products = [];
 let bdayCakes = {};
 let desserts = {};
 let brownies = {};
+let cookies = {};
 
 let selectedFlavor = 'Red Velvet';
 let selectedVariety = 'Macarons';
 let selectedBrownieFlavor = 'Walnut';
+let selectedCookieFlavor = 'Choco Chip';
 
 let currentSearchTerm = '';
 let selectedPriceFilter = 'all';
@@ -41,6 +43,7 @@ let recentSearches = JSON.parse(
 let selectedWeight = '1.0';
 let selectedBoxSize = '4';
 let selectedBrowniePack = '4';
+let selectedCookieBoxSize = 'Box of 6';
 
 let selectedGiftWrap = 'Standard';
 
@@ -170,20 +173,6 @@ const DEFAULT_DESSERTS = {
   },
 };
 
-function useFallbackProducts() {
-  products = DEFAULT_PRODUCTS;
-  bdayCakes = { ...DEFAULT_BDAY_CAKES };
-  desserts = { ...DEFAULT_DESSERTS };
-  brownies = { ...DEFAULT_BROWNIES };
-
-  if (document.getElementById('productsGrid')) {
-    filterProducts('all');
-  }
-  if (document.getElementById('cakePrice')) {
-    calculateBdayPrice();
-  }
-}
-
 const DEFAULT_BROWNIES = {
   Walnut: {
     price: {
@@ -240,6 +229,78 @@ const DEFAULT_BROWNIES = {
     img: 'https://theobroma.in/cdn/shop/files/AssortedBrownieBox6_400x400.jpg?v=1710838473'
   },
 };
+
+const DEFAULT_COOKIES = {
+  'Choco Chip': {
+    price: {
+      2: 150,
+      6: 275,
+      12: 450,
+      'tin': 650
+    },
+    img: 'https://theobroma.in/cdn/shop/files/HIGHRESEgglessChocolateChipCookieswithHands01-Square_400x400.jpg?v=1711188294'
+  },
+  'Double Choco': {
+    price: {
+      2: 150,
+      6: 350,
+      12: 500,
+      'tin': 850
+    },
+    img: 'https://theobroma.in/cdn/shop/files/HIGHRESEgglessDoubleChocolateChipCookieswithHands02-Square_400x400.jpg?v=1711720168'
+  },
+  'Oatmeal Raisin': {
+    price: {
+      2: 120,
+      6: 300,
+      12: 450,
+      'tin': 750
+    },
+    img: 'https://theobroma.in/cdn/shop/files/FG0873_Oats_RaisinsBigCookie_1Piece_400x400.jpg?v=1757667329'
+  },
+  'Almond Biscotti': {
+    price: {
+      2: 250,
+      6: 450,
+      12: 700,
+      'tin': 950
+    },
+    img: 'https://theobroma.in/cdn/shop/files/almondbiscotti_af65c87d-de88-4cd6-abbc-bd4045bee10e_400x400.jpg?v=1770729725'
+  },
+  'Hazelnut': {
+    price: {
+      2: 100,
+      6: 250,
+      12: 350,
+      'tin': 650
+    },
+    img: 'https://theobroma.in/cdn/shop/files/HIGHRESHazelnutCookiesCut-Square_400x400.jpg?v=1711188135'
+  },
+  'Cinnamon Swirl': {
+    price: {
+      2: 220,
+      6: 400,
+      12: 950,
+      'tin': 1250
+    },
+    img: 'https://theobroma.in/cdn/shop/files/CinnamonSwirlCookies_400x400.jpg?v=1750340014'
+  },
+};
+
+function useFallbackProducts() {
+  products = DEFAULT_PRODUCTS;
+  bdayCakes = { ...DEFAULT_BDAY_CAKES };
+  desserts = { ...DEFAULT_DESSERTS };
+  cookies = { ...DEFAULT_COOKIES };
+  brownies = { ...DEFAULT_BROWNIES };
+
+  if (document.getElementById('productsGrid')) {
+    filterProducts('all');
+  }
+  if (document.getElementById('cakePrice')) {
+    calculateBdayPrice();
+  }
+}
 
 const FAVOURITES_KEY = 'brownie_bliss_favourites';
 const BROWNIE_BLISS_BAKERY = {
@@ -1179,6 +1240,90 @@ function updateDessertFavouriteButton() {
   btn.innerHTML = active ? '&hearts;' : '&#9825;';
 }
 
+// --- COOKIE BUILDER ---
+// cookies object is now populated dynamically via loadProducts()
+
+function updateCookieFlavor(variety) {
+  if (!cookies[variety]) {
+    console.error('Cookie variety not found:', variety);
+    return;
+  }
+
+  selectedCookieFlavor = variety;
+
+  // Update image
+  const cookieImg = document.getElementById('cookieImg');
+  if (cookieImg && cookies[variety]) {
+    cookieImg.src = cookies[variety].img;
+  }
+
+  // Update active variety button
+  document.querySelectorAll('.cookie-flavor-btn').forEach((btn) => {
+    if (btn.textContent.trim() === variety) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  calculateCookiePrice();
+}
+
+function setCookieBoxSize(size, event) {
+  selectedCookieBoxSize = size;
+
+  document
+    .querySelectorAll('.cookie-pack-btn')
+    .forEach((b) => b.classList.remove('active'));
+
+  if (event?.target) event.target.classList.add('active');
+
+  calculateCookiePrice();
+}
+
+function calculateCookiePrice() {
+  const price =
+    cookies[selectedCookieFlavor]?.price?.[selectedCookieBoxSize] || 250;
+
+  const priceEl = document.getElementById('cookiePrice');
+
+  if (priceEl) {
+    priceEl.textContent = `₹ ${price}`;
+  }
+
+  updateCookieFavouriteButton();
+}
+
+function getCookieFavouriteItem() {
+  const cookie = cookies[selectedCookieFlavor] || {};
+  return {
+    id: `cookie-${selectedCookieFlavor}-${selectedCookieBoxSize}`,
+    name: `${selectedCookieFlavor} (${selectedCookieBoxSize})`,
+    price: cookies[selectedCookieFlavor]?.price?.[selectedCookieBoxSize] || 250,
+    img: cookie.img || document.getElementById('cookieImg')?.src || '',
+    emoji: cookie.emoji || '🍪',
+    category: 'cookies',
+  };
+}
+function updateCookieFavouriteButton() { 
+  const btn = document.getElementById('cookieFavoriteBtn');
+  if (!btn) return;
+
+  const item = getCookieFavouriteItem();
+  const active = isFavourite('cookies', item.id);
+
+  btn.dataset.favType = 'cookies';
+  btn.dataset.favId = item.id;
+  btn.classList.toggle('active', active);
+  btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  btn.setAttribute(
+    'title',
+    active ? 'Remove from favourites' : 'Add to favourites'
+  );
+
+  btn.innerHTML = active ? '&hearts;' : '&#9825;';
+}
+
 function sendWhatsAppFinal(orderId, itemsSnap, orderTotal) {
   const lines = Array.isArray(itemsSnap) && itemsSnap.length ? itemsSnap : cart;
 
@@ -1322,11 +1467,10 @@ function addBrownieToCart() {
 
 function addCookieToCart() {
   const item = {
-    id: 'cookie-choco-chip',
-    name: 'Choco Chip Cookies (Box of 6)',
-    price: 250,
-    img: 'https://www.shugarysweets.com/wp-content/uploads/2020/05/chocolate-chip-cookies-recipe.jpg',
-    emoji: '🍪',
+    id: `cookie-${selectedCookieFlavor}-${selectedCookieBoxSize}`,
+    name: `${selectedCookieFlavor} Cookies (Box of ${selectedCookieBoxSize})`,
+    price: cookies[selectedCookieFlavor]?.price?.[selectedCookieBoxSize] || 250,
+    img: cookies[selectedCookieFlavor]?.img || '',
     category: 'cookies',
     qty: 1,
   };
